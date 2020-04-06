@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "Proyecto Kaggle"
 output: html_notebook
 ---
 
@@ -308,7 +308,7 @@ dataset_R$GarageFinish <- c
 dataset_R<-dataset_R %>% select(OverallQual, GrLivArea, GarageCars, ExterQual, GarageArea, TotalBsmtSF, X1stFlrSF, KitchenQual, BsmtQual, FullBath, GarageFinish)
 #dataset_R
 ```
-
+#Agregar ID
 ```{r}
 dataset<-cbind(dataset_R,dataset_K,dataset_M)
 dataset <- dataset %>% mutate(id = row_number())
@@ -316,3 +316,37 @@ dataset <- dataset %>% select(id, SalePrice, everything())
 
 dataset.clean <- dataset
 ```
+#Particiones
+```{r}
+index<-createDataPartition(dataset.clean$id, p = 0.8, list=FALSE)
+dataTrain<-dataset[index, ]
+dataTest<-dataset[-index, ]
+```
+
+#Regresiones Lineales Cordero
+```{r}
+lmVar <- lm(SalePrice ~ OverallQual, data = dataTrain)
+summary(lmVar)
+lmVar <- lm(SalePrice ~ GrLivArea, data = dataTrain)
+summary(lmVar)
+lmVar <- lm(SalePrice ~ GarageCars, data = dataTrain)
+summary(lmVar)
+lmVar <- lm(SalePrice ~ GarageArea, data = dataTrain)
+summary(lmVar)
+lmVar <- lm(SalePrice ~ TotalBsmtSF, data = dataTrain)
+summary(lmVar)
+lmVar <- lm(SalePrice ~ X1stFlrSF, data = dataTrain)
+summary(lmVar)
+lmVar <- lm(SalePrice ~ FullBath, data = dataTrain)
+summary(lmVar)
+lmVar <- lm(SalePrice ~ ExterQual, data = dataTrain)
+summary(lmVar)
+lmVar <- lm(SalePrice ~ KitchenQual, data = dataTrain)
+summary(lmVar)
+lmVar <- lm(SalePrice ~ BsmtQual, data = dataTrain)
+summary(lmVar)
+lmVar <- lm(SalePrice ~ GarageFinish, data = dataTrain)
+summary(lmVar)
+```
+###BsmtQual descartado al tener solo 2 estrellas
+
