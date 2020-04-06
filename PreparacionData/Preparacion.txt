@@ -1,0 +1,1 @@
+Normalizamos y les hicimos Hot encoding (Dummy variables) o Integer encoding dependiendo de la necesidad
