@@ -1,0 +1,21 @@
+#Dummy Variables GarageFinish
+c <- c()
+for(i in 1:nrow(dataset)){
+  c[i] <- ifelse(is.na(dataset$GarageFinish[i]), 1, 0)
+}
+datasetGarageFinish_Na <- c
+c <- c()
+for(i in 1:nrow(dataset)){
+  c[i] <- ifelse(dataset$GarageFinish[i] == 'Fin', 1, 0)
+}
+dataset$GarageFinish_Fin <- c
+c <- c()
+for(i in 1:nrow(dataset)){
+  c[i] <- ifelse(dataset$GarageFinish[i] == 'RFn', 1, 0)
+}
+dataset$GarageFinish_RFn <- c
+c <- c()
+for(i in 1:nrow(dataset)){
+  c[i] <- ifelse(dataset$GarageFinish[i] == 'Unf', 1, 0)
+}
+datasetGarageFinish_Unf <- c
