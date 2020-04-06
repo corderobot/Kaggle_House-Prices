@@ -1,0 +1,98 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+dataset <- read.csv("train.csv")
+```
+
+```{r}
+map <- function(x, in_min, in_max, out_min, out_max) {
+  return((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
+}
+```
+#Normalizar
+```{r}
+#Normalizar OverallQual
+maximo <- max(dataset$OverallQual)
+minimo <- min(dataset$OverallQual)
+for (i in 1:nrow(dataset)) {
+  dataset$OverallQual[i] <- map(dataset$OverallQual[i], minimo, maximo, 0, 1)
+}
+#Normalizar GrLivArea
+maximo <- max(dataset$GrLivArea)
+minimo <- min(dataset$GrLivArea)
+for (i in 1:nrow(dataset)) {
+  dataset$GrLivArea[i] <- map(dataset$GrLivArea[i], minimo, maximo, 0, 1)
+}
+dataset$GrLivArea
+#Normalizar GarageCars
+maximo <- max(dataset$GarageCars)
+minimo <- min(dataset$GarageCars)
+for (i in 1:nrow(dataset)) {
+  dataset$GarageCars[i] <- map(dataset$GarageCars[i], minimo, maximo, 0, 1)
+}
+dataset$GarageArea
+#Normalizar GarageArea
+maximo <- max(dataset$GarageArea)
+minimo <- min(dataset$GarageArea)
+for (i in 1:nrow(dataset)) {
+  dataset$GarageArea[i] <- map(dataset$GarageArea[i], minimo, maximo, 0, 1)
+}
+dataset$TotalBsmtSF
+maximo <- max(dataset$TotalBsmtSF)
+minimo <- min(dataset$TotalBsmtSF)
+for (i in 1:nrow(dataset)) {
+  dataset$TotalBsmtSF[i] <- map(dataset$TotalBsmtSF[i], minimo, maximo, 0, 1)
+}
+dataset$TotalBsmtSF
+sum(is.na(dataset$X1stFlrSF))
+maximo <- max(dataset$X1stFlrSF)
+minimo <- min(dataset$X1stFlrSF)
+for (i in 1:nrow(dataset)) {
+  dataset$X1stFlrSF[i] <- map(dataset$X1stFlrSF[i], minimo, maximo, 0, 1)
+}
+#Normalizar FullBath
+maximo <- max(dataset$FullBath)
+minimo <- min(dataset$FullBath)
+for (i in 1:nrow(dataset)) {
+  dataset$FullBath[i] <- map(dataset$FullBath[i], minimo, maximo, 0, 1)
+}
+```
+#Integer Encoding
+```{r}
+#Integer Encoding ExterQual
+c <- c()
+for(i in 1:nrow(dataset)){
+  c[i] <- ifelse(dataset$ExterQual[i] == 'Fa', 0, 
+                                 ifelse(dataset$ExterQual[i] == 'Gd', 0.5, 1))
+}
+dataset$ExterQual <- c
+#Integer KitchenQual
+c <- c()
+for(i in 1:nrow(dataset)){
+  c[i] <- ifelse(dataset$KitchenQual[i] == 'Fa', 0, 
+                                   ifelse(dataset$KitchenQual[i] == 'Gd', 0.5, 1))
+}
+dataset$KitchenQual <- c
+#Integer BsmtQual
+c <- c()
+for(i in 1:nrow(dataset)){
+  c[i] <- ifelse(is.na(dataset$BsmtQual[i]), 0, 
+                 ifelse(dataset$BsmtQual[i] == 'Po', 0.20, 
+                        ifelse(dataset$BsmtQual[i] == 'Fa', 0.40, 
+                               ifelse(dataset$BsmtQual[i] == 'Ta', 0.60, 
+                                      ifelse(dataset$BsmtQual[i] == 'Gd', 0.80, 1)))))
+}
+dataset$BsmtQual <- c
+#Integer GarageFinish
+c <- c()
+for(i in 1:nrow(dataset)){
+  c[i] <- ifelse(is.na(dataset$GarageFinish[i]), 0, 
+                                   ifelse(dataset$GarageFinish[i] == 'Unf', 0.33, 
+                                          ifelse(dataset$GarageFinish[i] == 'RFn', 0.66, 1)))
+}
+dataset$GarageFinish <- c
+```
+
