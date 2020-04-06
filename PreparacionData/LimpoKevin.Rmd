@@ -1,0 +1,105 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+#install.packages("caret")
+library(dplyr)
+library(caret)
+```
+
+```{r}
+dataset <- read.csv("train.csv")
+dataset
+
+names(dataset)
+
+# TotRmsAbvGrd, YearBuilt, FireplaceQu, YearRemodAdd, GarageYrBlt, MasVnrArea, Fireplaces, GarageType, HeatingQC, BsmtFinSF1, Foundation
+```
+
+```{r}
+dataset[, c('TotRmsAbvGrd', 'YearBuilt', 'FireplaceQu', 'YearRemodAdd', 'GarageYrBlt', 'MasVnrArea', 'Fireplaces', 'GarageType', 'HeatingQC', 'BsmtFinSF1', 'Foundation')]
+
+```
+
+```{r}
+dataset %>% select(TotRmsAbvGrd) %>% distinct()       # Normalizar
+dataset %>% select(YearBuilt) %>% distinct()          # No normalizar
+dataset %>% select(FireplaceQu) %>% distinct()        # Integer Encoding
+dataset %>% select(YearRemodAdd) %>% distinct()       # Normalizar
+dataset %>% select(GarageYrBlt) %>% distinct()        # Normalizar
+dataset %>% select(MasVnrArea) %>% distinct()         # Normalizar
+dataset %>% select(Fireplaces) %>% distinct()         # No Normalizar
+dataset %>% select(GarageType) %>% distinct()         # One Hot Encoding
+dataset %>% select(HeatingQC) %>% distinct()          # Integer Encoding
+dataset %>% select(BsmtFinSF1) %>% distinct()         # Normalizar
+dataset %>% select(Foundation) %>% distinct()         # One Hot Encoding
+```
+
+```{r}
+# Revisando NAs para GarageYrBlt y se sustituyen por el promedio
+dataset %>% filter(is.na(GarageYrBlt))
+dataset$GarageYrBlt <- ifelse(
+  is.na(dataset$GarageYrBlt),
+  mean((dataset %>% filter(!is.na(GarageYrBlt)))$GarageYrBlt),
+  dataset$GarageYrBlt)
+dataset %>% filter(is.na(GarageYrBlt))
+
+
+# Revisando NAs para MasVnrArea y se sustituyen por el promedio
+dataset %>% filter(is.na(MasVnrArea))
+dataset$MasVnrArea <- ifelse(
+  is.na(dataset$MasVnrArea),
+  mean((dataset %>% filter(!is.na(MasVnrArea)))$MasVnrArea),
+  dataset$MasVnrArea)
+
+dataset %>% filter(is.na(MasVnrArea))
+```
+
+
+```{r}
+# Normalizando
+
+dataset$TotRmsAbvGrd <- ((dataset$TotRmsAbvGrd - min(dataset$TotRmsAbvGrd))/(max(dataset$TotRmsAbvGrd) - min(dataset$TotRmsAbvGrd)))
+dataset$YearRemodAdd <- ((dataset$YearRemodAdd - min(dataset$YearRemodAdd))/(max(dataset$YearRemodAdd) - min(dataset$YearRemodAdd)))
+dataset$GarageYrBlt <- ((dataset$GarageYrBlt - min(dataset$GarageYrBlt))/(max(dataset$GarageYrBlt) - min(dataset$GarageYrBlt)))
+dataset$MasVnrArea <- ((dataset$MasVnrArea - min(dataset$MasVnrArea))/(max(dataset$MasVnrArea) - min(dataset$MasVnrArea)))
+dataset$BsmtFinSF1 <- ((dataset$BsmtFinSF1 - min(dataset$BsmtFinSF1))/(max(dataset$BsmtFinSF1) - min(dataset$BsmtFinSF1)))
+
+# Integer Encoding de FireplaceQu
+dataset$FireplaceQu = ifelse(is.na(dataset$FireplaceQu), 0, 
+                      ifelse(dataset$FireplaceQu == "Po", 1,
+                      ifelse(dataset$FireplaceQu == "Fa", 2,
+                      ifelse(dataset$FireplaceQu == "TA", 3,
+                      ifelse(dataset$FireplaceQu == "Gd", 4, 5)))))
+
+# Integer Encoding de HeatingQC
+dataset$HeatingQC =   ifelse(dataset$HeatingQC == "Po", 0,
+                      ifelse(dataset$HeatingQC == "Fa", 1,
+                      ifelse(dataset$HeatingQC == "TA", 2,
+                      ifelse(dataset$HeatingQC == "Gd", 3, 4))))
+
+# One Hot Encoding de GarageType
+dataset <- dataset %>% mutate(GarageType_NoGarage = ifelse(is.na(dataset$GarageType), 1, 0))
+dataset <- dataset %>% mutate(GarageType_2Types = ifelse(dataset$GarageType == "2Types", 1, 0))
+dataset <- dataset %>% mutate(GarageType_Attchd = ifelse(dataset$GarageType == "Attchd", 1, 0))
+dataset <- dataset %>% mutate(GarageType_Basment = ifelse(dataset$GarageType == "Basment", 1, 0))
+dataset <- dataset %>% mutate(GarageType_BuiltIn = ifelse(dataset$GarageType == "BuiltIn", 1, 0))
+dataset <- dataset %>% mutate(GarageType_CarPort = ifelse(dataset$GarageType == "CarPort", 1, 0))
+dataset <- dataset %>% mutate(GarageType_Detchd = ifelse(dataset$GarageType == "Detchd", 1, 0))
+
+# One Hot Encoding de Foundation
+dataset <- dataset %>% mutate(Foundation_PConc = ifelse(dataset$Foundation == "PConc", 1, 0))
+dataset <- dataset %>% mutate(Foundation_CBlock = ifelse(dataset$Foundation == "CBlock", 1, 0))
+dataset <- dataset %>% mutate(Foundation_BrkTil	 = ifelse(dataset$Foundation == "BrkTil	", 1, 0))
+dataset <- dataset %>% mutate(Foundation_Wood = ifelse(dataset$Foundation == "Wood", 1, 0))
+dataset <- dataset %>% mutate(Foundation_Slab = ifelse(dataset$Foundation == "Slab", 1, 0))
+dataset <- dataset %>% mutate(Foundation_Stone = ifelse(dataset$Foundation == "Stone", 1, 0))
+
+dataset[, c('TotRmsAbvGrd', 'YearBuilt', 'FireplaceQu', 'YearRemodAdd', 'GarageYrBlt', 'MasVnrArea', 'Fireplaces', 'GarageType', 'HeatingQC', 'BsmtFinSF1', 'Foundation', names(dataset)[82:94])]
+```
+
+
+
