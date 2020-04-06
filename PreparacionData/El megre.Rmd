@@ -1,0 +1,321 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+#install.packages("caret")
+library(dplyr)
+library(caret)
+```
+
+```{r}
+dataset_K <- read.csv("train.csv")
+dataset_K
+names(dataset_K)
+# TotRmsAbvGrd, YearBuilt, FireplaceQu, YearRemodAdd, GarageYrBlt, MasVnrArea, Fireplaces, GarageType, HeatingQC, BsmtFinSF1, Foundation
+```
+
+```{r}
+dataset_K[, c('TotRmsAbvGrd', 'YearBuilt', 'FireplaceQu', 'YearRemodAdd', 'GarageYrBlt', 'MasVnrArea', 'Fireplaces', 'GarageType', 'HeatingQC', 'BsmtFinSF1', 'Foundation')]
+```
+
+```{r}
+dataset_K %>% select(TotRmsAbvGrd) %>% distinct()       # Normalizar
+dataset_K %>% select(YearBuilt) %>% distinct()          # No normalizar
+dataset_K %>% select(FireplaceQu) %>% distinct()        # Integer Encoding
+dataset_K %>% select(YearRemodAdd) %>% distinct()       # Normalizar
+dataset_K %>% select(GarageYrBlt) %>% distinct()        # Normalizar
+dataset_K %>% select(MasVnrArea) %>% distinct()         # Normalizar
+dataset_K %>% select(Fireplaces) %>% distinct()         # No Normalizar
+dataset_K %>% select(GarageType) %>% distinct()         # One Hot Encoding
+dataset_K %>% select(HeatingQC) %>% distinct()          # Integer Encoding
+dataset_K %>% select(BsmtFinSF1) %>% distinct()         # Normalizar
+dataset_K %>% select(Foundation) %>% distinct()         # One Hot Encoding
+```
+
+```{r}
+# Revisando NAs para GarageYrBlt y se sustituyen por el promedio
+dataset_K %>% filter(is.na(GarageYrBlt))
+dataset_K$GarageYrBlt <- ifelse(
+  is.na(dataset_K$GarageYrBlt),
+  mean((dataset_K %>% filter(!is.na(GarageYrBlt)))$GarageYrBlt),
+  dataset_K$GarageYrBlt)
+dataset_K %>% filter(is.na(GarageYrBlt))
+# Revisando NAs para MasVnrArea y se sustituyen por el promedio
+dataset_K %>% filter(is.na(MasVnrArea))
+dataset_K$MasVnrArea <- ifelse(
+  is.na(dataset_K$MasVnrArea),
+  mean((dataset_K %>% filter(!is.na(MasVnrArea)))$MasVnrArea),
+  dataset_K$MasVnrArea)
+dataset_K %>% filter(is.na(MasVnrArea))
+```
+
+
+```{r}
+# Normalizando
+dataset_K$TotRmsAbvGrd <- ((dataset_K$TotRmsAbvGrd - min(dataset_K$TotRmsAbvGrd))/(max(dataset_K$TotRmsAbvGrd) - min(dataset_K$TotRmsAbvGrd)))
+dataset_K$YearRemodAdd <- ((dataset_K$YearRemodAdd - min(dataset_K$YearRemodAdd))/(max(dataset_K$YearRemodAdd) - min(dataset_K$YearRemodAdd)))
+dataset_K$GarageYrBlt <- ((dataset_K$GarageYrBlt - min(dataset_K$GarageYrBlt))/(max(dataset_K$GarageYrBlt) - min(dataset_K$GarageYrBlt)))
+dataset_K$MasVnrArea <- ((dataset_K$MasVnrArea - min(dataset_K$MasVnrArea))/(max(dataset_K$MasVnrArea) - min(dataset_K$MasVnrArea)))
+dataset_K$BsmtFinSF1 <- ((dataset_K$BsmtFinSF1 - min(dataset_K$BsmtFinSF1))/(max(dataset_K$BsmtFinSF1) - min(dataset_K$BsmtFinSF1)))
+# Integer Encoding de FireplaceQu
+dataset_K$FireplaceQu = ifelse(is.na(dataset_K$FireplaceQu), 0, 
+                      ifelse(dataset_K$FireplaceQu == "Po", 1,
+                      ifelse(dataset_K$FireplaceQu == "Fa", 2,
+                      ifelse(dataset_K$FireplaceQu == "TA", 3,
+                      ifelse(dataset_K$FireplaceQu == "Gd", 4, 5)))))
+# Integer Encoding de HeatingQC
+dataset_K$HeatingQC =   ifelse(dataset_K$HeatingQC == "Po", 0,
+                      ifelse(dataset_K$HeatingQC == "Fa", 1,
+                      ifelse(dataset_K$HeatingQC == "TA", 2,
+                      ifelse(dataset_K$HeatingQC == "Gd", 3, 4))))
+# One Hot Encoding de GarageType
+dataset_K <- dataset_K %>% mutate(GarageType_NoGarage = ifelse(is.na(dataset_K$GarageType), 1, 0))
+dataset_K <- dataset_K %>% mutate(GarageType_2Types = ifelse(dataset_K$GarageType == "2Types", 1, 0))
+dataset_K <- dataset_K %>% mutate(GarageType_Attchd = ifelse(dataset_K$GarageType == "Attchd", 1, 0))
+dataset_K <- dataset_K %>% mutate(GarageType_Basment = ifelse(dataset_K$GarageType == "Basment", 1, 0))
+dataset_K <- dataset_K %>% mutate(GarageType_BuiltIn = ifelse(dataset_K$GarageType == "BuiltIn", 1, 0))
+dataset_K <- dataset_K %>% mutate(GarageType_CarPort = ifelse(dataset_K$GarageType == "CarPort", 1, 0))
+dataset_K <- dataset_K %>% mutate(GarageType_Detchd = ifelse(dataset_K$GarageType == "Detchd", 1, 0))
+# One Hot Encoding de Foundation
+dataset_K <- dataset_K %>% mutate(Foundation_PConc = ifelse(dataset_K$Foundation == "PConc", 1, 0))
+dataset_K <- dataset_K %>% mutate(Foundation_CBlock = ifelse(dataset_K$Foundation == "CBlock", 1, 0))
+dataset_K <- dataset_K %>% mutate(Foundation_BrkTil	 = ifelse(dataset_K$Foundation == "BrkTil	", 1, 0))
+dataset_K <- dataset_K %>% mutate(Foundation_Wood = ifelse(dataset_K$Foundation == "Wood", 1, 0))
+dataset_K <- dataset_K %>% mutate(Foundation_Slab = ifelse(dataset_K$Foundation == "Slab", 1, 0))
+dataset_K <- dataset_K %>% mutate(Foundation_Stone = ifelse(dataset_K$Foundation == "Stone", 1, 0))
+dataset_K <- dataset_K[, c('TotRmsAbvGrd', 'YearBuilt', 'FireplaceQu', 'YearRemodAdd', 'GarageYrBlt', 'MasVnrArea', 'Fireplaces', 'GarageType', 'HeatingQC', 'BsmtFinSF1', 'Foundation', names(dataset_K)[82:94])]
+dataset_K
+```
+
+
+
+
+
+
+```{r}
+#------------------------- Reading dataset_M -----------------------------------------------
+dataset_M <- read.csv("train.csv")
+dataset_M <- dataset_M %>% select(BsmtExposure, LotFrontage, WoodDeckSF, X2ndFlrSF, OpenPorchSF, BsmtFinType1, HalfBath, GarageQual, LotArea, GarageCond, LotShape)
+#------------------------- Cleaning dataset_M -----------------------------------------------
+
+dataset_M_LotFrontage <-filter(dataset_M,!(is.na(dataset_M$LotFrontage)))
+dataset_M_NLotFrontage <-filter(dataset_M,(is.na(dataset_M$LotFrontage)))
+mean_LotFrontage <- mean(dataset_M_LotFrontage$LotFrontage)
+dataset_M_NLotFrontage$LotFrontage<- mean_LotFrontage
+dataset_M <- rbind(dataset_M_LotFrontage, dataset_M_NLotFrontage)
+
+#------------------------- normalizing dataset_M -----------------------------------------------
+dataset_M$LotFrontage <- dataset_M$LotFrontage/max(dataset_M$LotFrontage)
+dataset_M$WoodDeckSF <- dataset_M$WoodDeckSF/max(dataset_M$WoodDeckSF)
+dataset_M$X2ndFlrSF <- dataset_M$X2ndFlrSF/max(dataset_M$X2ndFlrSF)
+dataset_M$OpenPorchSF <- dataset_M$OpenPorchSF/max(dataset_M$OpenPorchSF)
+dataset_M$LotArea <- dataset_M$LotArea/max(dataset_M$LotArea)
+
+#-------------------------- Hot Encoding------------------------------------------------------
+#--------------------------------------- BsmtExposure ----------------------------------------
+BsmtE_NA <- filter(dataset_M,is.na(dataset_M$BsmtExposure))
+  BsmtE_NA$BsmtExposure <- 0
+  
+BsmtE_No <- filter(dataset_M,dataset_M$BsmtExposure == "No")
+  BsmtE_No$BsmtExposure <- 1
+  
+BsmtE_Mn <- filter(dataset_M,dataset_M$BsmtExposure == "Mn")
+  BsmtE_Mn$BsmtExposure <- 2
+  
+BsmtE_Av <- filter(dataset_M,dataset_M$BsmtExposure == "Av")
+  BsmtE_Av$BsmtExposure <- 3
+  
+BsmtE_Gd <- filter(dataset_M,dataset_M$BsmtExposure == "Gd")
+  BsmtE_Gd$BsmtExposure <- 4
+  
+dataset_M <- rbind(BsmtE_NA, BsmtE_No, BsmtE_Mn, BsmtE_Av, BsmtE_Gd)
+#--------------------------------------- BsmtFinType1 ----------------------------------------
+
+BsmtFin_NA <- filter(dataset_M,is.na(dataset_M$BsmtFinType1))
+  BsmtFin_NA$BsmtFinType1 <- 0
+  
+BsmtFin_Unf <- filter(dataset_M,dataset_M$BsmtFinType1 == "Unf")
+  BsmtFin_Unf$BsmtFinType1 <- 1
+  
+BsmtFin_LwQ <- filter(dataset_M,dataset_M$BsmtFinType1 == "LwQ")
+  BsmtFin_LwQ$BsmtFinType1 <- 2
+  
+BsmtFin_Rec <- filter(dataset_M,dataset_M$BsmtFinType1 == "Rec")
+  BsmtFin_Rec$BsmtFinType1 <- 3
+  
+BsmtFin_BLQ <- filter(dataset_M,dataset_M$BsmtFinType1 == "BLQ")
+  BsmtFin_BLQ$BsmtFinType1 <- 4
+  
+BsmtFin_ALQ <- filter(dataset_M,dataset_M$BsmtFinType1 == "ALQ")
+  BsmtFin_ALQ$BsmtFinType1 <- 5
+  
+BsmtFin_GLQ <- filter(dataset_M,dataset_M$BsmtFinType1 == "GLQ")
+  BsmtFin_GLQ$BsmtFinType1 <- 6
+  
+dataset_M <- rbind(BsmtFin_NA, BsmtFin_Unf, BsmtFin_LwQ, BsmtFin_Rec, BsmtFin_BLQ, BsmtFin_ALQ, BsmtFin_GLQ)
+
+#--------------------------------------- GarageQual ----------------------------------------
+GarageQ_NA <- filter(dataset_M,is.na(dataset_M$GarageQual))
+  GarageQ_NA$GarageQual <- 0
+  
+GarageQ_Po <- filter(dataset_M,dataset_M$GarageQual == "Po")
+  GarageQ_Po$GarageQual <- 1
+  
+GarageQ_Fa <- filter(dataset_M,dataset_M$GarageQual == "Fa")
+  GarageQ_Fa$GarageQual <- 2
+  
+GarageQ_TA <- filter(dataset_M,dataset_M$GarageQual == "TA")
+  GarageQ_TA$GarageQual <- 3
+  
+GarageQ_Gd <- filter(dataset_M,dataset_M$GarageQual == "Gd")
+  GarageQ_Gd$GarageQual <- 4
+  
+GarageQ_Ex <- filter(dataset_M,dataset_M$GarageQual == "Ex")
+  GarageQ_Ex$GarageQual <- 5
+
+dataset_M <- rbind(GarageQ_NA, GarageQ_Po, GarageQ_Fa, GarageQ_TA, GarageQ_Gd, GarageQ_Ex)
+
+#--------------------------------------- GarageCond ----------------------------------------
+GarageC_NA <- filter(dataset_M,is.na(dataset_M$GarageCond))
+  GarageC_NA$GarageCond <- 0
+  
+GarageC_Po <- filter(dataset_M,dataset_M$GarageCond == "Po")
+  GarageC_Po$GarageCond <- 1
+  
+GarageC_Fa <- filter(dataset_M,dataset_M$GarageCond == "Fa")
+  GarageC_Fa$GarageCond <- 2
+  
+GarageC_TA <- filter(dataset_M,dataset_M$GarageCond == "TA")
+  GarageC_TA$GarageCond <- 3
+  
+GarageC_Gd <- filter(dataset_M,dataset_M$GarageCond == "Gd")
+  GarageC_Gd$GarageCond <-4 
+  
+GarageC_Ex <- filter(dataset_M,dataset_M$GarageCond == "Ex")
+  GarageC_Ex$GarageCond <- 5
+
+dataset_M <- rbind(GarageC_NA, GarageC_Po, GarageC_Fa, GarageC_TA, GarageC_Gd, GarageC_Ex)
+
+#-------------------------- Integer Encoding------------------------------------------------------
+LotShape_Reg<- ifelse(dataset_M$LotShape == "Reg", 1, 0) 
+LotShape_IR1<- ifelse(dataset_M$LotShape == "IR1", 1, 0) 
+LotShape_IR2<- ifelse(dataset_M$LotShape == "IR2", 1, 0) 
+LotShape_IR3<- ifelse(dataset_M$LotShape == "IR3", 1, 0) 
+
+dataset_M<-cbind(dataset_M, LotShape_Reg, LotShape_IR1 , LotShape_IR2 , LotShape_IR3)
+
+dataset_M<-subset(dataset_M,select = -c(LotShape))
+dataset_M
+
+
+```
+
+
+```{r}
+dataset_R <- read.csv("train.csv")
+```
+
+```{r}
+map <- function(x, in_min, in_max, out_min, out_max) {
+  return((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
+}
+```
+#Normalizar
+```{r}
+#Normalizar OverallQual
+maximo <- max(dataset_R$OverallQual)
+minimo <- min(dataset_R$OverallQual)
+for (i in 1:nrow(dataset_R)) {
+  dataset_R$OverallQual[i] <- map(dataset_R$OverallQual[i], minimo, maximo, 0, 1)
+}
+#Normalizar GrLivArea
+maximo <- max(dataset_R$GrLivArea)
+minimo <- min(dataset_R$GrLivArea)
+for (i in 1:nrow(dataset_R)) {
+  dataset_R$GrLivArea[i] <- map(dataset_R$GrLivArea[i], minimo, maximo, 0, 1)
+}
+dataset_R$GrLivArea
+#Normalizar GarageCars
+maximo <- max(dataset_R$GarageCars)
+minimo <- min(dataset_R$GarageCars)
+for (i in 1:nrow(dataset_R)) {
+  dataset_R$GarageCars[i] <- map(dataset_R$GarageCars[i], minimo, maximo, 0, 1)
+}
+dataset_R$GarageArea
+#Normalizar GarageArea
+maximo <- max(dataset_R$GarageArea)
+minimo <- min(dataset_R$GarageArea)
+for (i in 1:nrow(dataset_R)) {
+  dataset_R$GarageArea[i] <- map(dataset_R$GarageArea[i], minimo, maximo, 0, 1)
+}
+dataset_R$TotalBsmtSF
+maximo <- max(dataset_R$TotalBsmtSF)
+minimo <- min(dataset_R$TotalBsmtSF)
+for (i in 1:nrow(dataset_R)) {
+  dataset_R$TotalBsmtSF[i] <- map(dataset_R$TotalBsmtSF[i], minimo, maximo, 0, 1)
+}
+dataset_R$TotalBsmtSF
+sum(is.na(dataset_R$X1stFlrSF))
+maximo <- max(dataset_R$X1stFlrSF)
+minimo <- min(dataset_R$X1stFlrSF)
+for (i in 1:nrow(dataset_R)) {
+  dataset_R$X1stFlrSF[i] <- map(dataset_R$X1stFlrSF[i], minimo, maximo, 0, 1)
+}
+#Normalizar FullBath
+maximo <- max(dataset_R$FullBath)
+minimo <- min(dataset_R$FullBath)
+for (i in 1:nrow(dataset_R)) {
+  dataset_R$FullBath[i] <- map(dataset_R$FullBath[i], minimo, maximo, 0, 1)
+}
+```
+#Integer Encoding
+```{r}
+#Integer Encoding ExterQual
+c <- c()
+for(i in 1:nrow(dataset_R)){
+  c[i] <- ifelse(dataset_R$ExterQual[i] == 'Fa', 0, 
+                                 ifelse(dataset_R$ExterQual[i] == 'Gd', 0.5, 1))
+}
+dataset_R$ExterQual <- c
+#Integer KitchenQual
+c <- c()
+for(i in 1:nrow(dataset_R)){
+  c[i] <- ifelse(dataset_R$KitchenQual[i] == 'Fa', 0, 
+                                   ifelse(dataset_R$KitchenQual[i] == 'Gd', 0.5, 1))
+}
+dataset_R$KitchenQual <- c
+#Integer BsmtQual
+c <- c()
+for(i in 1:nrow(dataset_R)){
+  c[i] <- ifelse(is.na(dataset_R$BsmtQual[i]), 0, 
+                 ifelse(dataset_R$BsmtQual[i] == 'Po', 0.20, 
+                        ifelse(dataset_R$BsmtQual[i] == 'Fa', 0.40, 
+                               ifelse(dataset_R$BsmtQual[i] == 'Ta', 0.60, 
+                                      ifelse(dataset_R$BsmtQual[i] == 'Gd', 0.80, 1)))))
+}
+dataset_R$BsmtQual <- c
+#Integer GarageFinish
+c <- c()
+for(i in 1:nrow(dataset_R)){
+  c[i] <- ifelse(is.na(dataset_R$GarageFinish[i]), 0, 
+                                   ifelse(dataset_R$GarageFinish[i] == 'Unf', 0.33, 
+                                          ifelse(dataset_R$GarageFinish[i] == 'RFn', 0.66, 1)))
+}
+dataset_R$GarageFinish <- c
+dataset_R<-dataset_R %>% select(OverallQual, GrLivArea, GarageCars, ExterQual, GarageArea, TotalBsmtSF, X1stFlrSF, KitchenQual, BsmtQual, FullBath, GarageFinish)
+dataset_R
+```
+
+```{r}
+dataset<-cbind(dataset_R,dataset_K,dataset_M)
+dataset
+```
+
