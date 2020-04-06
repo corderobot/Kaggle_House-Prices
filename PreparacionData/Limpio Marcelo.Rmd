@@ -1,0 +1,128 @@
+---
+title: "normalizacion de datos"
+output: html_notebook
+---
+```{r}
+library(dplyr)
+library(caret)
+```
+
+```{r}
+#------------------------- Reading dataset -----------------------------------------------
+dataset <- read.csv("train.csv")
+dataset <- dataset %>% select(BsmtExposure, LotFrontage, WoodDeckSF, X2ndFlrSF, OpenPorchSF, BsmtFinType1, HalfBath, GarageQual, LotArea, GarageCond, LotShape)
+#------------------------- Cleaning dataset -----------------------------------------------
+
+dataset_LotFrontage <-filter(dataset,!(is.na(dataset$LotFrontage)))
+dataset_NLotFrontage <-filter(dataset,(is.na(dataset$LotFrontage)))
+mean_LotFrontage <- mean(dataset_LotFrontage$LotFrontage)
+dataset_NLotFrontage$LotFrontage<- mean_LotFrontage
+dataset <- rbind(dataset_LotFrontage, dataset_NLotFrontage)
+
+#------------------------- normalizing dataset -----------------------------------------------
+dataset$LotFrontage <- dataset$LotFrontage/max(dataset$LotFrontage)
+dataset$WoodDeckSF <- dataset$WoodDeckSF/max(dataset$WoodDeckSF)
+dataset$X2ndFlrSF <- dataset$X2ndFlrSF/max(dataset$X2ndFlrSF)
+dataset$OpenPorchSF <- dataset$OpenPorchSF/max(dataset$OpenPorchSF)
+dataset$LotArea <- dataset$LotArea/max(dataset$LotArea)
+
+#-------------------------- Hot Encoding------------------------------------------------------
+#--------------------------------------- BsmtExposure ----------------------------------------
+BsmtE_NA <- filter(dataset,is.na(dataset$BsmtExposure))
+  BsmtE_NA$BsmtExposure <- 0
+  
+BsmtE_No <- filter(dataset,dataset$BsmtExposure == "No")
+  BsmtE_No$BsmtExposure <- 1
+  
+BsmtE_Mn <- filter(dataset,dataset$BsmtExposure == "Mn")
+  BsmtE_Mn$BsmtExposure <- 2
+  
+BsmtE_Av <- filter(dataset,dataset$BsmtExposure == "Av")
+  BsmtE_Av$BsmtExposure <- 3
+  
+BsmtE_Gd <- filter(dataset,dataset$BsmtExposure == "Gd")
+  BsmtE_Gd$BsmtExposure <- 4
+  
+dataset <- rbind(BsmtE_NA, BsmtE_No, BsmtE_Mn, BsmtE_Av, BsmtE_Gd)
+#--------------------------------------- BsmtFinType1 ----------------------------------------
+
+BsmtFin_NA <- filter(dataset,is.na(dataset$BsmtFinType1))
+  BsmtFin_NA$BsmtFinType1 <- 0
+  
+BsmtFin_Unf <- filter(dataset,dataset$BsmtFinType1 == "Unf")
+  BsmtFin_Unf$BsmtFinType1 <- 1
+  
+BsmtFin_LwQ <- filter(dataset,dataset$BsmtFinType1 == "LwQ")
+  BsmtFin_LwQ$BsmtFinType1 <- 2
+  
+BsmtFin_Rec <- filter(dataset,dataset$BsmtFinType1 == "Rec")
+  BsmtFin_Rec$BsmtFinType1 <- 3
+  
+BsmtFin_BLQ <- filter(dataset,dataset$BsmtFinType1 == "BLQ")
+  BsmtFin_BLQ$BsmtFinType1 <- 4
+  
+BsmtFin_ALQ <- filter(dataset,dataset$BsmtFinType1 == "ALQ")
+  BsmtFin_ALQ$BsmtFinType1 <- 5
+  
+BsmtFin_GLQ <- filter(dataset,dataset$BsmtFinType1 == "GLQ")
+  BsmtFin_GLQ$BsmtFinType1 <- 6
+  
+dataset <- rbind(BsmtFin_NA, BsmtFin_Unf, BsmtFin_LwQ, BsmtFin_Rec, BsmtFin_BLQ, BsmtFin_ALQ, BsmtFin_GLQ)
+
+#--------------------------------------- GarageQual ----------------------------------------
+GarageQ_NA <- filter(dataset,is.na(dataset$GarageQual))
+  GarageQ_NA$GarageQual <- 0
+  
+GarageQ_Po <- filter(dataset,dataset$GarageQual == "Po")
+  GarageQ_Po$GarageQual <- 1
+  
+GarageQ_Fa <- filter(dataset,dataset$GarageQual == "Fa")
+  GarageQ_Fa$GarageQual <- 2
+  
+GarageQ_TA <- filter(dataset,dataset$GarageQual == "TA")
+  GarageQ_TA$GarageQual <- 3
+  
+GarageQ_Gd <- filter(dataset,dataset$GarageQual == "Gd")
+  GarageQ_Gd$GarageQual <- 4
+  
+GarageQ_Ex <- filter(dataset,dataset$GarageQual == "Ex")
+  GarageQ_Ex$GarageQual <- 5
+
+dataset <- rbind(GarageQ_NA, GarageQ_Po, GarageQ_Fa, GarageQ_TA, GarageQ_Gd, GarageQ_Ex)
+
+#--------------------------------------- GarageCond ----------------------------------------
+GarageC_NA <- filter(dataset,is.na(dataset$GarageCond))
+  GarageC_NA$GarageCond <- 0
+  
+GarageC_Po <- filter(dataset,dataset$GarageCond == "Po")
+  GarageC_Po$GarageCond <- 1
+  
+GarageC_Fa <- filter(dataset,dataset$GarageCond == "Fa")
+  GarageC_Fa$GarageCond <- 2
+  
+GarageC_TA <- filter(dataset,dataset$GarageCond == "TA")
+  GarageC_TA$GarageCond <- 3
+  
+GarageC_Gd <- filter(dataset,dataset$GarageCond == "Gd")
+  GarageC_Gd$GarageCond <-4 
+  
+GarageC_Ex <- filter(dataset,dataset$GarageCond == "Ex")
+  GarageC_Ex$GarageCond <- 5
+
+dataset <- rbind(GarageC_NA, GarageC_Po, GarageC_Fa, GarageC_TA, GarageC_Gd, GarageC_Ex)
+
+#-------------------------- Integer Encoding------------------------------------------------------
+LotShape_Reg<- ifelse(dataset$LotShape == "Reg", 1, 0) 
+LotShape_IR1<- ifelse(dataset$LotShape == "IR1", 1, 0) 
+LotShape_IR2<- ifelse(dataset$LotShape == "IR2", 1, 0) 
+LotShape_IR3<- ifelse(dataset$LotShape == "IR3", 1, 0) 
+
+dataset<-cbind(dataset, LotShape_Reg, LotShape_IR1 , LotShape_IR2 , LotShape_IR3)
+
+dataset<-subset(dataset,select = -c(LotShape))
+dataset
+
+
+```
+
+
